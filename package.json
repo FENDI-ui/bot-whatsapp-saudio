@@ -1,13 +1,13 @@
-
 {
-  "name": "bot-whatsapp-saudio",
+  "name": "saudio-whatsapp-bot",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.18",
+    "@whiskeysockets/baileys": "6.7.18",
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
     "pino": "^9.6.0",
     "qrcode-terminal": "^0.12.0"
   }
