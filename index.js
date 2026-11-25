@@ -1,11 +1,18 @@
-
 import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason
 } from '@whiskeysockets/baileys'
 
 import pino from 'pino'
-import qrcode from 'qrcode-terminal'
+import readline from 'readline'
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
+
+const tanya = (teks) =>
+  new Promise(resolve => rl.question(teks, resolve))
 
 async function startBot() {
   const { state, saveCreds } =
@@ -17,16 +24,22 @@ async function startBot() {
     printQRInTerminal: false
   })
 
+  if (!state.creds.registered) {
+    const nomor = await tanya(
+      'Masukkan nomor WhatsApp (contoh 62812xxxx): '
+    )
+
+    const kode = await sock.requestPairingCode(
+      nomor.replace(/\D/g, '')
+    )
+
+    console.log('\nKODE WHATSAPP KAMU:', kode)
+    console.log('Masukkan kode tersebut di WhatsApp!')
+  }
+
   sock.ev.on('creds.update', saveCreds)
 
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update
-
-    if (qr) {
-      console.log('SCAN QR WHATSAPP:')
-      qrcode.generate(qr, { small: true })
-    }
-
+  sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
     if (connection === 'open') {
       console.log('BOT BERHASIL ONLINE! 🔥')
     }
@@ -35,24 +48,24 @@ async function startBot() {
       const status = lastDisconnect?.error?.output?.statusCode
 
       if (status !== DisconnectReason.loggedOut) {
-        console.log('Menghubungkan ulang...')
-        await new Promise(r => setTimeout(r, 3000))
         startBot()
       } else {
-        console.log('Login ulang diperlukan.')
+        console.log('Silakan login ulang.')
       }
     }
   })
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const m = messages[0]
-    if (!m?.message || m.key.fromMe) return
+
+    if (!m.message || m.key.fromMe) return
 
     const text =
       m.message.conversation ||
-      m.message.extendedTextMessage?.text || ''
+      m.message.extendedTextMessage?.text ||
+      ''
 
-    if (text.trim().toLowerCase() === '.ping') {
+    if (text.trim().toLowerCase() === 'ping') {
       await sock.sendMessage(m.key.remoteJid, {
         text: 'Bot aktif! 🔥'
       })
@@ -60,5 +73,4 @@ async function startBot() {
   })
 }
 
-startBot().catch(console.error)
-  
+startBot().catch
